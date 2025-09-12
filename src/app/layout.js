@@ -8,17 +8,9 @@ import { store } from '../redux/store';
 import Header from './header/Header';
 import Sidebar from './sidebar/Sidebar';
 
-// Component to monitor auth state and redirect
+// Component to monitor auth state (no redirect on refresh)
 function AuthMonitor() {
   const user = useSelector((state) => state.login.user);
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (!user && pathname !== '/login') {
-      router.push('/login');
-    }
-  }, [user, pathname, router]);
 
   return null; // This component doesn't render anything
 }

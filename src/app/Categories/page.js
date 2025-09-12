@@ -5,36 +5,21 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   Box,
   Typography,
-  TextField,
   Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Skeleton,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Snackbar,
   Alert,
   Card,
-  CardContent,
-  Divider
+  CardContent
 } from "@mui/material";
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
   Refresh as RefreshIcon
 } from "@mui/icons-material";
 
 import { fetchCategories, addCategory, deleteCategory } from "../../redux/categoriesSlice";
+
+import AddCategoryForm from "./components/AddCategoryForm";
+import CategoriesTable from "./components/CategoriesTable";
+import DeleteCategoryDialog from "./components/DeleteCategoryDialog";
 
 export default function Settings() {
   const dispatch = useDispatch();
@@ -51,7 +36,9 @@ export default function Settings() {
     dispatch(fetchCategories());
   }, [dispatch]);
 
-
+  const handleRefresh = () => {
+    dispatch(fetchCategories());
+  };
 
   // Add category
   const handleAddCategory = async (e) => {
@@ -99,15 +86,7 @@ export default function Settings() {
     setOrderBy(property);
   };
 
-  const sortedCategories = [...categories].sort((a, b) => {
-    if (a[orderBy] < b[orderBy]) {
-      return order === "asc" ? -1 : 1;
-    }
-    if (a[orderBy] > b[orderBy]) {
-      return order === "asc" ? 1 : -1;
-    }
-    return 0;
-  });
+
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -124,10 +103,10 @@ export default function Settings() {
             <Typography color="textSecondary" paragraph>
               {error}
             </Typography>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={fetchCategories}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleRefresh}
               startIcon={<RefreshIcon />}
             >
               Try Again
@@ -144,139 +123,29 @@ export default function Settings() {
         Category Management
       </Typography>
       
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom color="primary">
-          Add New Category
-        </Typography>
-        <Box component="form" onSubmit={handleAddCategory} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-          <TextField
-            label="Category Name"
-            variant="outlined"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            sx={{ flexGrow: 1 }}
-            disabled={adding}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={adding || !newCategory.trim()}
-            startIcon={<AddIcon />}
-            sx={{ minWidth: 140 }}
-          >
-            {adding ? "Adding..." : "Add Category"}
-          </Button>
-        </Box>
-      </Paper>
+      <AddCategoryForm
+        newCategory={newCategory}
+        setNewCategory={setNewCategory}
+        handleAddCategory={handleAddCategory}
+        adding={adding}
+      />
 
-      <Paper sx={{ width: "100%" }}>
-        <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography variant="h6">
-            Existing Categories
-          </Typography>
-          <Button 
-            onClick={fetchCategories} 
-            startIcon={<RefreshIcon />}
-            disabled={loading}
-          >
-            Refresh
-          </Button>
-        </Box>
-        <Divider />
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "id"}
-                    direction={orderBy === "id" ? order : "asc"}
-                    onClick={() => handleSort("id")}
-                  >
-                    ID
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "name"}
-                    direction={orderBy === "name" ? order : "asc"}
-                    onClick={() => handleSort("name")}
-                  >
-                    Name
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell>Updated At</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                // Loading skeletons
-                Array.from(new Array(5)).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton variant="text" /></TableCell>
-                    <TableCell><Skeleton variant="text" /></TableCell>
-                    <TableCell><Skeleton variant="text" /></TableCell>
-                    <TableCell><Skeleton variant="text" /></TableCell>
-                    <TableCell><Skeleton variant="circular" width={40} height={40} /></TableCell>
-                  </TableRow>
-                ))
-              ) : sortedCategories.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                    <Typography variant="body2" color="textSecondary">
-                      No categories found. Add your first category above.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedCategories.map((cat) => (
-                  <TableRow key={cat.id} hover>
-                    <TableCell>{cat.id}</TableCell>
-                    <TableCell>
-                      <Chip label={cat.name} color="primary" variant="outlined" />
-                    </TableCell>
-                    <TableCell>{new Date(cat.createdAt).toLocaleString()}</TableCell>
-                    <TableCell>{new Date(cat.updatedAt).toLocaleString()}</TableCell>
-                    <TableCell align="center">
-                      <IconButton 
-                        color="error" 
-                        onClick={() => setDeleteDialog({ open: true, category: cat })}
-                        aria-label="delete"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+      <CategoriesTable
+        categories={categories}
+        loading={loading}
+        order={order}
+        orderBy={orderBy}
+        handleSort={handleSort}
+        setDeleteDialog={setDeleteDialog}
+        handleRefresh={handleRefresh}
+      />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, category: null })}
-      >
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete the category "{deleteDialog.category?.name}"? 
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialog({ open: false, category: null })}>
-            Cancel
-          </Button>
-          <Button onClick={handleDeleteCategory} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteCategoryDialog
+        deleteDialog={deleteDialog}
+        setDeleteDialog={setDeleteDialog}
+        handleDeleteCategory={handleDeleteCategory}
+        deleting={deleting}
+      />
 
       {/* Snackbar for notifications */}
       <Snackbar

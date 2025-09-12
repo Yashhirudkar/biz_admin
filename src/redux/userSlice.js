@@ -1,42 +1,35 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiFetch } from '../utils/api';
+import axios from 'axios';
 
+// Base API URL (optional: so you don't repeat it everywhere)
+const API_URL = "http://localhost:5000/api";
+
+// Async thunk: Fetch users
 export const fetchUsers = createAsyncThunk(
   'user/fetchUsers',
-  async (_, { rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/users", {}, dispatch);
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      const response = await axios.get(`${API_URL}/users`, { withCredentials: true });
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to fetch users"
+      );
     }
   }
 );
 
+// Async thunk: Delete user
 export const deleteUser = createAsyncThunk(
   'user/deleteUser',
-  async (userId, { rejectWithValue, dispatch }) => {
+  async (userId, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/deleteUser", {
-        method: "POST", // change to DELETE if your API expects it
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: userId }),
-      }, dispatch);
-
-      if (!response.ok) {
-        throw new Error("Failed to delete user");
-      }
-
-      const result = await response.json();
-      return { userId, result };
+      await axios.delete(`${API_URL}/users/${userId}`, { withCredentials: true });
+      return userId;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to delete user"
+      );
     }
   }
 );
@@ -54,14 +47,20 @@ const userSlice = createSlice({
     },
     updateUser: (state, action) => {
       const { id, name, email } = action.payload;
-      const userIndex = state.users.findIndex(u => u.id === id);
+      const userIndex = state.users.findIndex((u) => u.id === id);
       if (userIndex !== -1) {
-        state.users[userIndex] = { ...state.users[userIndex], name, email, updatedAt: new Date().toISOString() };
+        state.users[userIndex] = {
+          ...state.users[userIndex],
+          name,
+          email,
+          updatedAt: new Date().toISOString(),
+        };
       }
     },
   },
   extraReducers: (builder) => {
     builder
+      // fetchUsers
       .addCase(fetchUsers.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -74,11 +73,13 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      // deleteUser
       .addCase(deleteUser.pending, (state) => {
         state.error = null;
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
-        state.users = state.users.filter((u) => u.id !== action.payload.userId);
+        state.users = state.users.filter((u) => u.id !== action.payload);
       })
       .addCase(deleteUser.rejected, (state, action) => {
         state.error = action.payload;

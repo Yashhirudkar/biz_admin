@@ -1,19 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiFetch } from '../utils/api';
+import axios from 'axios';
+
+const API_URL = "http://localhost:5000/api";
 
 // Async thunk to fetch categories
 export const fetchCategories = createAsyncThunk(
   'categories/fetchCategories',
-  async (_, { rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/get-categories", {}, dispatch);
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-      const data = await response.json();
-      return data;
+      const response = await axios.get(`${API_URL}/get-categories`, { withCredentials: true });
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to fetch categories"
+      );
     }
   }
 );
@@ -21,20 +21,16 @@ export const fetchCategories = createAsyncThunk(
 // Async thunk to add a category
 export const addCategory = createAsyncThunk(
   'categories/addCategory',
-  async (categoryName, { rejectWithValue, dispatch }) => {
+  async (categoryName, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/add-categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: categoryName }),
-      }, dispatch);
-      if (!response.ok) {
-        throw new Error('Failed to add category');
-      }
-      const data = await response.json();
-      return data;
+      const response = await axios.post(`${API_URL}/add-categories`, {
+        name: categoryName,
+      });
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to add category"
+      );
     }
   }
 );
@@ -42,17 +38,14 @@ export const addCategory = createAsyncThunk(
 // Async thunk to delete a category
 export const deleteCategory = createAsyncThunk(
   'categories/deleteCategory',
-  async (categoryId, { rejectWithValue, dispatch }) => {
+  async (categoryId, { rejectWithValue }) => {
     try {
-      const response = await apiFetch(`http://localhost:5000/api/categories/${categoryId}`, {
-        method: "DELETE",
-      }, dispatch);
-      if (!response.ok) {
-        throw new Error('Failed to delete category');
-      }
-      return categoryId;
+      await axios.delete(`${API_URL}/categories/${categoryId}`);
+      return categoryId; // return id to remove from state
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to delete category"
+      );
     }
   }
 );
@@ -82,6 +75,7 @@ const categoriesSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
       // addCategory
       .addCase(addCategory.pending, (state) => {
         state.adding = true;
@@ -95,6 +89,7 @@ const categoriesSlice = createSlice({
         state.adding = false;
         state.error = action.payload;
       })
+
       // deleteCategory
       .addCase(deleteCategory.pending, (state) => {
         state.deleting = true;
@@ -102,7 +97,9 @@ const categoriesSlice = createSlice({
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.deleting = false;
-        state.categories = state.categories.filter(cat => cat.id !== action.payload);
+        state.categories = state.categories.filter(
+          (cat) => cat.id !== action.payload
+        );
       })
       .addCase(deleteCategory.rejected, (state, action) => {
         state.deleting = false;

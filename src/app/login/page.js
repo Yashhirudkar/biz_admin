@@ -57,12 +57,6 @@ export default function LoginPage() {
     dispatch(loadUser());
   }, [dispatch]);
 
-  useEffect(() => {
-    if (user) {
-      router.push('/dashboard');
-    }
-  }, [user, router]);
-
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };

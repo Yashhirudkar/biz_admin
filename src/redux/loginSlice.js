@@ -1,24 +1,23 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiFetch } from '../utils/api';
+import axios from 'axios';
 
+const API_URL = "http://localhost:5000/api";
+
+// Async thunk for login
 export const loginUser = createAsyncThunk(
   'login/loginUser',
-  async (loginData, { rejectWithValue, dispatch }) => {
+  async (loginData, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/login", {
-        method: "POST",
+      const response = await axios.post(`${API_URL}/login`, loginData, {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginData),
-        credentials: "include",
-      }, dispatch);
+        withCredentials: true,
+      });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid credentials");
-      }
-      return data.user;
+      return response.data.user;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Invalid credentials"
+      );
     }
   }
 );
@@ -26,19 +25,14 @@ export const loginUser = createAsyncThunk(
 // Async thunk for logout
 export const logoutUser = createAsyncThunk(
   'login/logoutUser',
-  async (_, { rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/logout", {
-        method: "POST",
-        credentials: "include",
-      }, dispatch);
-
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
+      await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
       return;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Logout failed"
+      );
     }
   }
 );
@@ -46,22 +40,18 @@ export const logoutUser = createAsyncThunk(
 // Async thunk for register
 export const registerUser = createAsyncThunk(
   'login/registerUser',
-  async (registerData, { rejectWithValue, dispatch }) => {
+  async (registerData, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/register", {
-        method: "POST",
+      const response = await axios.post(`${API_URL}/register`, registerData, {
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerData),
-        credentials: "include",
-      }, dispatch);
+        withCredentials: true,
+      });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
-      return data;
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Registration failed"
+      );
     }
   }
 );
@@ -76,7 +66,7 @@ export const loadUser = createAsyncThunk(
         return JSON.parse(storedUser);
       }
       return null;
-    } catch (error) {
+    } catch {
       return rejectWithValue("Failed to load user");
     }
   }

@@ -1,14 +1,28 @@
-// API utility with automatic logout on 401
-export const apiFetch = async (url, options = {}, dispatch) => {
-  const response = await fetch(url, options);
+// utils/axiosInstance.js
+import axios from "axios";
+import store from "../store"; // adjust path to your Redux store
 
-  if (response.status === 401) {
-    // Session expired, logout user
-    if (dispatch) {
-      dispatch({ type: 'login/logout' });
+// Create axios instance
+const axiosInstance = axios.create({
+  baseURL: "http://localhost:5000/api",
+  withCredentials: true, // ensures cookies/session are sent
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Response interceptor to catch 401 errors
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Auto-logout on 401
+      store.dispatch({ type: "login/logout" });
+      // Optionally redirect to login page
+      // window.location.href = "/login";
     }
-    // Optionally, redirect to login can be handled in the component
+    return Promise.reject(error);
   }
+);
 
-  return response;
-};
+export default axiosInstance;

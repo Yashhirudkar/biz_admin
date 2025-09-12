@@ -1,31 +1,29 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiFetch } from '../utils/api';
+import axios from 'axios';
+
+const API_URL = "http://localhost:5000/api";
 
 // Async thunk to fetch data
 export const fetchData = createAsyncThunk(
   'uploaddata/fetchData',
-  async ({ search = "", page = 1 }, { rejectWithValue, dispatch, getState }) => {
+  async ({ search = "", page = 1 }, { rejectWithValue, getState }) => {
     try {
       const state = getState();
       const { name, email, password } = state.login;
-      const response = await apiFetch("http://localhost:5000/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          search,
-          page,
-        }),
-      }, dispatch);
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-      const data = await response.json();
-      return data;
+
+      const response = await axios.post(`${API_URL}/data`, {
+        name,
+        email,
+        password,
+        search,
+        page,
+      }, { withCredentials: true });
+
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to fetch data"
+      );
     }
   }
 );
@@ -33,25 +31,20 @@ export const fetchData = createAsyncThunk(
 // Async thunk to upload CSV
 export const uploadCsv = createAsyncThunk(
   'uploaddata/uploadCsv',
-  async (formData, { rejectWithValue, dispatch }) => {
+  async (formData, { rejectWithValue }) => {
     try {
-      const response = await apiFetch("http://localhost:5000/api/upload-csv2", {
-        method: "POST",
-        body: formData,
-      }, dispatch);
-      const text = await response.text();
-      let json;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        throw new Error("Server did not return JSON. Response: " + text);
-      }
-      if (!response.ok) {
-        throw new Error(json.message || "Upload failed");
-      }
-      return json;
+      const response = await axios.post(`${API_URL}/upload-csv2`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
+      });
+
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Upload failed"
+      );
     }
   }
 );
@@ -84,14 +77,15 @@ const uploaddataSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
       // uploadCsv
       .addCase(uploadCsv.pending, (state) => {
         state.uploading = true;
         state.error = null;
       })
-      .addCase(uploadCsv.fulfilled, (state, action) => {
+      .addCase(uploadCsv.fulfilled, (state) => {
         state.uploading = false;
-        // Optionally, you can refetch data or update state based on response
+        // You could refetch data or handle server response if needed
       })
       .addCase(uploadCsv.rejected, (state, action) => {
         state.uploading = false;
