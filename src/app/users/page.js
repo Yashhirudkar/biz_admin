@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsers, deleteUser, updateUser } from "../../redux/userSlice";
 import UserTable from "./UserTable";
 import EditUserDialog from "./EditUserDialog";
 import DeleteUserDialog from "./DeleteUserDialog";
 import SnackbarNotification from "./SnackbarNotification";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const dispatch = useDispatch();
+  const { users, loading, error } = useSelector((state) => state.user);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -17,30 +18,8 @@ export default function UsersPage() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = () => {
-    setLoading(true);
-    setError("");
-    fetch("http://localhost:5000/api/users")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to fetch users");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setUsers(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching users:", err);
-        setError(err.message || "Error fetching users");
-        setUsers([]);
-        setLoading(false);
-      });
-  };
+    dispatch(fetchUsers());
+  }, [dispatch]);
 
   const handleEditClick = (user) => {
     setSelectedUser(user);
@@ -49,18 +28,7 @@ export default function UsersPage() {
   };
 
   const handleEditSubmit = () => {
-    setUsers(
-      users.map((u) =>
-        u.id === selectedUser.id
-          ? {
-              ...u,
-              name: editForm.name,
-              email: editForm.email,
-              updatedAt: new Date().toISOString(),
-            }
-          : u
-      )
-    );
+    dispatch(updateUser({ id: selectedUser.id, name: editForm.name, email: editForm.email }));
     setEditDialogOpen(false);
     setSelectedUser(null);
   };
@@ -74,29 +42,12 @@ export default function UsersPage() {
     if (!selectedUser) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/deteleUser", {
-        method: "POST", // change to DELETE if your API expects it
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: selectedUser.id }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete user");
-      }
-
-      const result = await res.json();
-      console.log("Delete response:", result);
-
-      // Update UI after successful deletion
-      setUsers(users.filter((u) => u.id !== selectedUser.id));
+      await dispatch(deleteUser(selectedUser.id)).unwrap();
       setDeleteDialogOpen(false);
       setSelectedUser(null);
       setSnackbarOpen(true);
     } catch (err) {
       console.error("Error deleting user:", err);
-      setError(err.message || "Error deleting user");
     }
   };
 
@@ -106,7 +57,7 @@ export default function UsersPage() {
         users={users}
         loading={loading}
         error={error}
-        onRefresh={fetchUsers}
+        onRefresh={() => dispatch(fetchUsers())}
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
       />

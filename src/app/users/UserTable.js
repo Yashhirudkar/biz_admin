@@ -34,7 +34,7 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   background: "white",
   overflowY: "auto",
   overflowX: "auto",
-  maxHeight: "60vh",
+  maxHeight: "70vh",
   width: "100%",
   marginTop: theme.spacing(4),
   "& .MuiTableHead-root": {
@@ -105,29 +105,25 @@ export default function UserTable({
     );
   }
 
-  return (
-    <Box sx={{ width: "100%", p: { xs: 1, sm: 2, md: 3 } }}>
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{
-          borderRadius: 2,
-          mb: 3,
-          background: "linear-gradient(135deg, #1976d2 0%, #115293 100%)",
-        }}
-      >
-        <Toolbar>
-          <PersonIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            User Management
-          </Typography>
-          <Tooltip title="Refresh">
-            <ActionButton color="inherit" onClick={onRefresh} sx={{ mr: 1 }}>
-              <RefreshIcon />
-            </ActionButton>
-          </Tooltip>
-        </Toolbar>
-      </AppBar>
+  return ( 
+    <Box sx={{ width: "95%", p: { xs: 1, sm: 2, md: 3 } ,overflowX: "auto"}}>
+
+    <Typography
+  variant="h6"
+  component="div"
+  sx={{
+    color: '#1976d2',
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontWeight: 700,           // bold
+    fontSize: '2.125rem',      // equivalent to your CSS
+    lineHeight: 1.235,
+    letterSpacing: '0.00735em',
+    marginBottom: '0.35em',
+  }}
+>
+  User Management
+</Typography>
+
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
@@ -163,13 +159,14 @@ export default function UserTable({
           >
             <TableHead>
               <TableRow>
-                <StyledTableCell>User</StyledTableCell>
-                <StyledTableCell>Email</StyledTableCell>
-                <StyledTableCell>Status</StyledTableCell>
-                <StyledTableCell>Created</StyledTableCell>
-                <StyledTableCell>Last Updated</StyledTableCell>
-                <StyledTableCell align="center">Actions</StyledTableCell>
-              </TableRow>
+  <StyledTableCell sx={{ backgroundColor: '#1976d2', color: 'white' }}>User</StyledTableCell>
+  <StyledTableCell sx={{ backgroundColor: '#1976d2', color: 'white' }}>Email</StyledTableCell>
+  <StyledTableCell sx={{ backgroundColor: '#1976d2', color: 'white' }}>Status</StyledTableCell>
+  <StyledTableCell sx={{ backgroundColor: '#1976d2', color: 'white' }}>Created</StyledTableCell>
+  <StyledTableCell sx={{ backgroundColor: '#1976d2', color: 'white' }}>Last Updated</StyledTableCell>
+  <StyledTableCell sx={{ backgroundColor: '#1976d2', color: 'white' }} align="center">Actions</StyledTableCell>
+</TableRow>
+
             </TableHead>
             <TableBody>
               {users.map((user) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Box,
   Typography,
@@ -33,12 +34,13 @@ import {
   Refresh as RefreshIcon
 } from "@mui/icons-material";
 
+import { fetchCategories, addCategory, deleteCategory } from "../../redux/categoriesSlice";
+
 export default function Settings() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
+  const { categories, loading, error, adding, deleting } = useSelector((state) => state.categories);
+
   const [newCategory, setNewCategory] = useState("");
-  const [adding, setAdding] = useState(false);
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("name");
   const [deleteDialog, setDeleteDialog] = useState({ open: false, category: null });
@@ -46,23 +48,10 @@ export default function Settings() {
 
   // Fetch categories
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("http://localhost:5000/api/getCategories");
-      if (!res.ok) throw new Error("Failed to fetch categories");
-      const data = await res.json();
-      setCategories(data);
-    } catch (err) {
-      setError(err.message);
-      showSnackbar("Error fetching categories: " + err.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // Add category
   const handleAddCategory = async (e) => {
@@ -73,37 +62,28 @@ export default function Settings() {
     }
 
     try {
-      setAdding(true);
-      const res = await fetch("http://localhost:5000/api/addCategories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategory }),
-      });
-
-      if (!res.ok) throw new Error("Failed to add category");
-
-      setNewCategory("");
-      showSnackbar("Category added successfully", "success");
-      await fetchCategories(); // refresh table
+      const resultAction = await dispatch(addCategory(newCategory));
+      if (addCategory.fulfilled.match(resultAction)) {
+        setNewCategory("");
+        showSnackbar("Category added successfully", "success");
+      } else {
+        showSnackbar(resultAction.payload || "Failed to add category", "error");
+      }
     } catch (err) {
       showSnackbar(err.message, "error");
-    } finally {
-      setAdding(false);
     }
   };
 
   // Delete category
   const handleDeleteCategory = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/categories/${deleteDialog.category.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete category");
-
-      showSnackbar("Category deleted successfully", "success");
-      setDeleteDialog({ open: false, category: null });
-      await fetchCategories(); // refresh table
+      const resultAction = await dispatch(deleteCategory(deleteDialog.category.id));
+      if (deleteCategory.fulfilled.match(resultAction)) {
+        showSnackbar("Category deleted successfully", "success");
+        setDeleteDialog({ open: false, category: null });
+      } else {
+        showSnackbar(resultAction.payload || "Failed to delete category", "error");
+      }
     } catch (err) {
       showSnackbar(err.message, "error");
     }
@@ -119,7 +99,7 @@ export default function Settings() {
     setOrderBy(property);
   };
 
-  const sortedCategories = categories.sort((a, b) => {
+  const sortedCategories = [...categories].sort((a, b) => {
     if (a[orderBy] < b[orderBy]) {
       return order === "asc" ? -1 : 1;
     }
@@ -160,7 +140,7 @@ export default function Settings() {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, margin: "0 auto" }}>
-      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
+      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="#1976d2">
         Category Management
       </Typography>
       

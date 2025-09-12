@@ -11,8 +11,13 @@ import {
   Avatar,
   Box,
 } from '@mui/material';
+import { useDispatch } from 'react-redux';
+import { useRouter } from 'next/navigation';
+import { logoutUser } from '../../redux/loginSlice';
 
 export default function Header() {
+  const dispatch = useDispatch();
+  const router = useRouter();
   const [anchorEl, setAnchorEl] = useState(null);
   const isMenuOpen = Boolean(anchorEl);
 
@@ -22,6 +27,12 @@ export default function Header() {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    handleMenuClose();
+    router.push('/login');
   };
 
   const menuId = 'primary-account-menu';
@@ -37,7 +48,7 @@ export default function Header() {
     >
       <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
       <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-      <MenuItem onClick={handleMenuClose}>Logout</MenuItem>
+      <MenuItem onClick={handleLogout}>Logout</MenuItem>
     </Menu>
   );
 

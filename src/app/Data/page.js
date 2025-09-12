@@ -1,76 +1,47 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { CircularProgress, Box, Typography, alpha, useTheme } from "@mui/material";
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { CircularProgress, Box, Typography } from "@mui/material";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import DataTableComponent from "./components/DataTableComponent";
 import PaginationComponent from "./components/PaginationComponent";
 import UploadModal from "./components/UploadModal";
+import { fetchData, uploadCsv } from "../../redux/uploaddataSlice";
 
 export default function DataTable() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const dispatch = useDispatch();
+  const { data, loading, error, uploading, totalPages, currentPage } = useSelector(
+    (state) => state.uploaddata
+  );
 
   // Modal state
-  const [open, setOpen] = useState(false);
-  const [file, setFile] = useState(null);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  const [open, setOpen] = React.useState(false);
+  const [file, setFile] = React.useState(null);
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [categoryId, setCategoryId] = React.useState("");
 
   // Search + Pagination
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = React.useState("");
+  const [page, setPage] = React.useState(1);
 
-  const theme = useTheme();
-
-  // 📌 Fetch Data
-  const fetchData = async (query = "", pageNum = 1) => {
-    try {
-      setLoading(true);
-      const res = await fetch("http://localhost:5000/api/data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "yash1",
-          email: "yashhirudkar@gmail.com",
-          password: "123",
-          search: query,
-          page: pageNum,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch data");
-      const json = await res.json();
-
-      setRows(json.data || []);
-      setTotalPages(json.totalPages || 1);
-      setPage(json.currentPage || 1);
-    } catch (err) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData(search, page);
-  }, [page]);
+  // Fetch data on page change
+  React.useEffect(() => {
+    dispatch(fetchData({ search, page }));
+  }, [dispatch, page]);
 
   // Debounced search effect
-  useEffect(() => {
+  React.useEffect(() => {
     const delayDebounce = setTimeout(() => {
       setPage(1); // reset to first page on new search
-      fetchData(search, 1);
+      dispatch(fetchData({ search, page: 1 }));
     }, 500);
     return () => clearTimeout(delayDebounce);
-  }, [search]);
+  }, [dispatch, search]);
 
-  // 📌 Handle Upload
+  // Handle upload
   const handleUpload = async () => {
     if (!file || !title || !categoryId) {
       alert("Please fill all required fields");
@@ -84,29 +55,16 @@ export default function DataTable() {
     formData.append("categoryId", categoryId);
 
     try {
-      setUploading(true);
-      const res = await fetch("http://localhost:5000/api/upload-csv2", {
-        method: "POST",
-        body: formData,
-      });
-
-      const text = await res.text();
-      let json;
-      try {
-        json = JSON.parse(text);
-      } catch {
-        throw new Error("Server did not return JSON. Response: " + text);
+      const resultAction = await dispatch(uploadCsv(formData));
+      if (uploadCsv.fulfilled.match(resultAction)) {
+        alert(`✅ ${resultAction.payload.message}, Inserted: ${resultAction.payload.inserted}`);
+        setOpen(false);
+        dispatch(fetchData({ search, page }));
+      } else {
+        alert(`❌ ${resultAction.payload || "Upload failed"}`);
       }
-
-      if (!res.ok) throw new Error(json.message || "Upload failed");
-
-      alert(`✅ ${json.message}, Inserted: ${json.inserted}`);
-      setOpen(false);
-      fetchData(search, page);
     } catch (err) {
       alert(`❌ ${err.message}`);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -130,7 +88,7 @@ export default function DataTable() {
     <Box sx={{ p: 1, maxWidth: 1400, margin: "0 auto" }}>
       <Header onUploadClick={() => setOpen(true)} />
       <SearchBar search={search} onSearchChange={(e) => setSearch(e.target.value)} />
-      <DataTableComponent rows={rows} />
+      <DataTableComponent rows={data} />
       <PaginationComponent totalPages={totalPages} page={page} onPageChange={(e, value) => setPage(value)} />
       <UploadModal
         open={open}
