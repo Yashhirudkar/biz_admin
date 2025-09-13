@@ -8,13 +8,13 @@ import {
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
 
-const AddCategoryForm = ({ newCategory, setNewCategory, handleAddCategory, adding }) => {
+const AddCategoryForm = ({ newCategory, setNewCategory, handleAddCategory, adding, onOpenSubModal }) => {
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
       <Typography variant="h6" gutterBottom color="primary">
         Add New Category
       </Typography>
-      <Box component="form" onSubmit={handleAddCategory} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+      <Box component="form" onSubmit={handleAddCategory} sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
         <TextField
           label="Category Name"
           variant="outlined"
@@ -33,6 +33,14 @@ const AddCategoryForm = ({ newCategory, setNewCategory, handleAddCategory, addin
           {adding ? "Adding..." : "Add Category"}
         </Button>
       </Box>
+      <Button
+        variant="outlined"
+        onClick={onOpenSubModal}
+        startIcon={<AddIcon />}
+        sx={{ minWidth: 200 }}
+      >
+        Add New Sub Category
+      </Button>
     </Paper>
   );
 };

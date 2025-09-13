@@ -15,21 +15,23 @@ import {
   Refresh as RefreshIcon
 } from "@mui/icons-material";
 
-import { fetchCategories, addCategory, deleteCategory } from "../../redux/categoriesSlice";
+import { fetchCategories, addCategory, deleteCategory, createSubCategory } from "../../redux/categoriesSlice";
 
 import AddCategoryForm from "./components/AddCategoryForm";
 import CategoriesTable from "./components/CategoriesTable";
 import DeleteCategoryDialog from "./components/DeleteCategoryDialog";
+import AddSubCategoryModal from "./components/AddSubCategoryModal";
 
 export default function Settings() {
   const dispatch = useDispatch();
-  const { categories, loading, error, adding, deleting } = useSelector((state) => state.categories);
+  const { categories, loading, error, adding, deleting, addingSub } = useSelector((state) => state.categories);
 
   const [newCategory, setNewCategory] = useState("");
   const [order, setOrder] = useState("asc");
   const [orderBy, setOrderBy] = useState("name");
   const [deleteDialog, setDeleteDialog] = useState({ open: false, category: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  const [subModalOpen, setSubModalOpen] = useState(false);
 
   // Fetch categories
   useEffect(() => {
@@ -86,7 +88,30 @@ export default function Settings() {
     setOrderBy(property);
   };
 
+  // Open sub-category modal
+  const handleOpenSubModal = () => {
+    setSubModalOpen(true);
+  };
 
+  // Close sub-category modal
+  const handleCloseSubModal = () => {
+    setSubModalOpen(false);
+  };
+
+  // Handle add sub-category
+  const handleAddSubCategory = async ({ name, categoryId }) => {
+    try {
+      const resultAction = await dispatch(createSubCategory({ name, categoryId }));
+      if (createSubCategory.fulfilled.match(resultAction)) {
+        showSnackbar("Sub Category added successfully", "success");
+        setSubModalOpen(false);
+      } else {
+        showSnackbar(resultAction.payload || "Failed to add sub category", "error");
+      }
+    } catch (err) {
+      showSnackbar(err.message, "error");
+    }
+  };
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -128,6 +153,7 @@ export default function Settings() {
         setNewCategory={setNewCategory}
         handleAddCategory={handleAddCategory}
         adding={adding}
+        onOpenSubModal={handleOpenSubModal}
       />
 
       <CategoriesTable
@@ -158,6 +184,14 @@ export default function Settings() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <AddSubCategoryModal
+        open={subModalOpen}
+        onClose={handleCloseSubModal}
+        onSubmit={handleAddSubCategory}
+        loading={addingSub}
+        categories={categories}
+      />
     </Box>
   );
 }

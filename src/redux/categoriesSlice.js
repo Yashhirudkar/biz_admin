@@ -50,14 +50,34 @@ export const deleteCategory = createAsyncThunk(
   }
 );
 
+// Async thunk to create a sub-category
+export const createSubCategory = createAsyncThunk(
+  'categories/createSubCategory',
+  async ({ name, categoryId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(`${API_URL}/create-sub-category`, {
+        name,
+        categoryId,
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || "Failed to create sub-category"
+      );
+    }
+  }
+);
+
 const categoriesSlice = createSlice({
   name: 'categories',
   initialState: {
     categories: [],
+    subcategories: [],
     loading: false,
     error: null,
     adding: false,
     deleting: false,
+    addingSub: false,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -103,6 +123,20 @@ const categoriesSlice = createSlice({
       })
       .addCase(deleteCategory.rejected, (state, action) => {
         state.deleting = false;
+        state.error = action.payload;
+      })
+
+      // createSubCategory
+      .addCase(createSubCategory.pending, (state) => {
+        state.addingSub = true;
+        state.error = null;
+      })
+      .addCase(createSubCategory.fulfilled, (state, action) => {
+        state.addingSub = false;
+        state.subcategories.push(action.payload.subCategory);
+      })
+      .addCase(createSubCategory.rejected, (state, action) => {
+        state.addingSub = false;
         state.error = action.payload;
       });
   },
