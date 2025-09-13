@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Drawer,
   List,
@@ -20,7 +20,8 @@ import {
   People as UsersIcon,
   Settings as SettingsIcon,
   Assessment as ReportsIcon,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  Assignment as AssignmentIcon
 } from '@mui/icons-material';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -40,6 +41,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', color: '#1976d2' },
     { text: 'Users', icon: <UsersIcon />, path: '/users', color: '#2e7d32' },
     { text: 'Categories', icon: <SettingsIcon />, path: '/Categories', color: '#ed6c02' },
+    { text: 'Assign-Data', icon: <AssignmentIcon />, path: '/Assigndata', color: '#ff9800' },
     { text: 'Data', icon: <ReportsIcon />, path: '/Data', color: '#9c27b0' },
   ];
 
@@ -146,7 +148,7 @@ const Sidebar = ({ open, toggleSidebar }) => {
 
               {/* Add divider after certain groups */}
               {index === 0 && <Divider sx={{ my: 1 }} />} {/* After Dashboard */}
-              {index === 2 && <Divider sx={{ my: 1 }} />} {/* After Categories */}
+              {index === 3 && <Divider sx={{ my: 1 }} />} {/* After Assigndata */}
             </React.Fragment>
           ))}
         </List>

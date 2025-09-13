@@ -35,13 +35,18 @@ export const addCategory = createAsyncThunk(
   }
 );
 
-// Async thunk to delete a category
+// ✅ Fixed: deleteCategory using POST
 export const deleteCategory = createAsyncThunk(
   'categories/deleteCategory',
   async (categoryId, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/categories/${categoryId}`);
-      return categoryId; // return id to remove from state
+      // POST request instead of DELETE
+      const response = await axios.post(`${API_URL}/delete-category`, {
+        id: categoryId,
+      });
+
+      // If backend sends confirmation, return categoryId
+      return categoryId;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || error.message || "Failed to delete category"
@@ -117,6 +122,7 @@ const categoriesSlice = createSlice({
       })
       .addCase(deleteCategory.fulfilled, (state, action) => {
         state.deleting = false;
+        // ✅ Filter out deleted category from state
         state.categories = state.categories.filter(
           (cat) => cat.id !== action.payload
         );
@@ -133,7 +139,13 @@ const categoriesSlice = createSlice({
       })
       .addCase(createSubCategory.fulfilled, (state, action) => {
         state.addingSub = false;
-        state.subcategories.push(action.payload.subCategory);
+        const subCategory = action.payload.subCategory;
+        const category = state.categories.find(cat => cat.id === subCategory.categoryId);
+        if (category) {
+          if (!category.subcategories) category.subcategories = [];
+          category.subcategories.push(subCategory);
+        }
+        state.subcategories.push(subCategory);
       })
       .addCase(createSubCategory.rejected, (state, action) => {
         state.addingSub = false;
